@@ -30,6 +30,8 @@ func (c *Controller) Mux() *http.ServeMux {
 		m := http.NewServeMux()
 		m.HandleFunc("/ui", c.RootHandler)
 		m.Handle("/ws", websocket.Handler(c.WSHandler))
+		m.HandleFunc("/runs", c.RunsHandler)
+		m.HandleFunc("/run/", c.RunHandler)
 		c.mux = m
 	})
 

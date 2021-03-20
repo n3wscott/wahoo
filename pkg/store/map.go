@@ -2,7 +2,6 @@ package store
 
 import (
 	"context"
-	"errors"
 	"sync"
 	"time"
 )
@@ -52,6 +51,14 @@ func (s *Store) gc() {
 	}
 }
 
+func (s *Store) Keys() []string {
+	keys := make([]string, 0)
+	for k := range s.records {
+		keys = append(keys, k)
+	}
+	return keys
+}
+
 func (s *Store) Set(k string, v interface{}) {
 	s.mux.Lock()
 	defer s.mux.Unlock()
@@ -60,18 +67,44 @@ func (s *Store) Set(k string, v interface{}) {
 	if !ok {
 		r = &record{value: v}
 		s.records[k] = r
+	} else {
+		r.value = v
 	}
+
 	r.last = time.Now().Unix()
 }
 
-func (s *Store) Get(k string) (interface{}, error) {
+func (s *Store) Get(k string) interface{} {
 	s.mux.Lock()
 	defer s.mux.Unlock()
 
 	if it, ok := s.records[k]; ok {
 		it.last = time.Now().Unix()
-		return it.value, nil
+		return it.value
 	}
 
-	return nil, errors.New("not found")
+	return nil
+}
+
+func (s *Store) Update(k string, fn func(value interface{}, found bool) interface{}) {
+	s.mux.Lock()
+	defer s.mux.Unlock()
+
+	r, found := s.records[k]
+	var v interface{}
+
+	if found {
+		v = r.value
+	}
+
+	// invoke callback.
+	v = fn(v, found)
+
+	if !found {
+		r = &record{}
+		s.records[k] = r
+	}
+
+	r.value = v
+	r.last = time.Now().Unix()
 }
