@@ -1,0 +1,14 @@
+
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: wahoo
+spec:
+  template:
+    metadata:
+      annotations:
+        autoscaling.knative.dev/minScale: "1"
+        autoscaling.knative.dev/maxScale: "1"
+    spec:
+      containers:
+        - image: ko://github.com/n3wscott/wahoo
