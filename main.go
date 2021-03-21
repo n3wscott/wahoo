@@ -9,12 +9,12 @@ import (
 
 	cloudevents "github.com/cloudevents/sdk-go/v2"
 	"github.com/kelseyhightower/envconfig"
-	"github.com/n3wscott/sockeye/pkg/controller"
+	"github.com/n3wscott/wahoo/pkg/controller"
 )
 
 type envConfig struct {
 	DataPath string `envconfig:"KO_DATA_PATH" default:"/var/run/ko/" required:"true"`
-	WWWPath string `envconfig:"WWW_PATH" default:"www" required:"true"`
+	WWWPath  string `envconfig:"WWW_PATH" default:"www" required:"true"`
 	Port     int    `envconfig:"PORT" default:"8080" required:"true"`
 }
 

@@ -4,6 +4,9 @@ type Results struct {
 	Run         string       `json:"run"`
 	Environment *Environment `json:"environment"`
 	Tests       []Test       `json:"tests"`
+
+	Started  string `json:"started"`
+	Finished string `json:"finished"`
 }
 
 type Environment struct {

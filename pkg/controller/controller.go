@@ -2,7 +2,7 @@ package controller
 
 import (
 	"context"
-	"github.com/n3wscott/sockeye/pkg/store"
+	"github.com/n3wscott/wahoo/pkg/store"
 	"golang.org/x/net/websocket"
 	"net/http"
 	"sync"

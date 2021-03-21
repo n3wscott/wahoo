@@ -2,7 +2,7 @@ package controller
 
 import (
 	cloudevents "github.com/cloudevents/sdk-go/v2"
-	"github.com/n3wscott/sockeye/pkg/model"
+	"github.com/n3wscott/wahoo/pkg/model"
 	"log"
 	"path/filepath"
 	"strings"
@@ -40,7 +40,7 @@ func (c *Controller) CeHandler(event cloudevents.Event) {
 
 	key := keyFromSource(event.Source())
 
-	getResults := func(value interface{}, found bool) *model.Results {
+	asResults := func(value interface{}, found bool) *model.Results {
 		results, ok := value.(*model.Results)
 		if !ok || !found {
 			results = new(model.Results)
@@ -57,7 +57,8 @@ func (c *Controller) CeHandler(event cloudevents.Event) {
 			return
 		}
 		c.store.Update(key, func(value interface{}, found bool) interface{} {
-			results := getResults(value, found)
+			results := asResults(value, found)
+			results.Started = event.Time().UTC().Format(time.RFC3339)
 			if results.Environment != nil {
 				env.Created = results.Environment.Created
 				env.Deleted = results.Environment.Deleted
@@ -68,7 +69,7 @@ func (c *Controller) CeHandler(event cloudevents.Event) {
 
 	case NamespaceCreatedType:
 		c.store.Update(key, func(value interface{}, found bool) interface{} {
-			results := getResults(value, found)
+			results := asResults(value, found)
 			if results.Environment == nil {
 				results.Environment = new(model.Environment)
 			}
@@ -78,7 +79,7 @@ func (c *Controller) CeHandler(event cloudevents.Event) {
 
 	case NamespaceDeletedType:
 		c.store.Update(key, func(value interface{}, found bool) interface{} {
-			results := getResults(value, found)
+			results := asResults(value, found)
 			if results.Environment == nil {
 				results.Environment = new(model.Environment)
 			}
@@ -97,7 +98,7 @@ func (c *Controller) CeHandler(event cloudevents.Event) {
 			Started: event.Time().UTC().Format(time.RFC3339),
 		}
 		c.store.Update(key, func(value interface{}, found bool) interface{} {
-			results := getResults(value, found)
+			results := asResults(value, found)
 			exists := false
 			for i, t := range results.Tests {
 				if t.Name == test.Name {
@@ -126,7 +127,7 @@ func (c *Controller) CeHandler(event cloudevents.Event) {
 			Ended:   event.Time().UTC().Format(time.RFC3339),
 		}
 		c.store.Update(key, func(value interface{}, found bool) interface{} {
-			results := getResults(value, found)
+			results := asResults(value, found)
 			exists := false
 			for i, t := range results.Tests {
 				if t.Name == test.Name {
@@ -150,7 +151,7 @@ func (c *Controller) CeHandler(event cloudevents.Event) {
 			log.Println("failed to parse data from event: ☁️ ", event.String())
 			return
 		}
-		test := model.Step{
+		step := model.Step{
 			Name:    started.StepName,
 			Level:   started.StepLevel,
 			Timing:  started.StepTiming,
@@ -158,28 +159,85 @@ func (c *Controller) CeHandler(event cloudevents.Event) {
 		}
 		testName := testNameFromStepName(started.TestName)
 		c.store.Update(key, func(value interface{}, found bool) interface{} {
-			results := getResults(value, found)
-			exists := false
+			results := asResults(value, found)
+			testExists := false
 			for i, t := range results.Tests {
 				if t.Name == testName {
-					results.Tests[i].Steps
-// TODO: ok we have to check that the test exists, and if it does, merge with the existing step.
-// Or add to the test with the new step.
-// Or, make the test and the steps the best we can.
-					exists = true
-
-					.Level = test.Started
-					results.Tests[i].Started = test.Started
+					testExists = true
+					stepFound := false
+					for j, s := range results.Tests[i].Steps {
+						if s.Name == step.Name {
+							stepFound = true
+							results.Tests[i].Steps[j].Level = step.Level
+							results.Tests[i].Steps[j].Timing = step.Timing
+							results.Tests[i].Steps[j].Started = step.Started
+							break
+						}
+					}
+					if !stepFound {
+						results.Tests[i].Steps = append(results.Tests[i].Steps, step)
+					}
 					break
 				}
 			}
-			if !exists {
-				//results.Tests = append(results.Tests, test)
+			if !testExists {
+				results.Tests = append(results.Tests, model.Test{
+					Name: testName,
+					Steps: []model.Step{
+						step,
+					},
+				})
 			}
 			return results
 		})
 
 	case StepFinishedType:
+		var started StepType
+		if err := event.DataAs(&started); err != nil {
+			log.Println("failed to parse data from event: ☁️ ", event.String())
+			return
+		}
+		step := model.Step{
+			Name:    started.StepName,
+			Passed:  started.Passed,
+			Skipped: started.Skipped,
+			Failed:  started.Failed,
+			Ended:   event.Time().UTC().Format(time.RFC3339),
+		}
+		testName := testNameFromStepName(started.TestName)
+		c.store.Update(key, func(value interface{}, found bool) interface{} {
+			results := asResults(value, found)
+			testExists := false
+			for i, t := range results.Tests {
+				if t.Name == testName {
+					testExists = true
+					stepFound := false
+					for j, s := range results.Tests[i].Steps {
+						if s.Name == step.Name {
+							stepFound = true
+							results.Tests[i].Steps[j].Passed = step.Passed
+							results.Tests[i].Steps[j].Skipped = step.Skipped
+							results.Tests[i].Steps[j].Failed = step.Failed
+							results.Tests[i].Steps[j].Ended = step.Ended
+							break
+						}
+					}
+					if !stepFound {
+						results.Tests[i].Steps = append(results.Tests[i].Steps, step)
+					}
+					break
+				}
+			}
+			if !testExists {
+				results.Tests = append(results.Tests, model.Test{
+					Name: testName,
+					Steps: []model.Step{
+						step,
+					},
+				})
+			}
+			return results
+		})
 
 	case TestSetStartedType:
 		// noop for now.
@@ -187,7 +245,15 @@ func (c *Controller) CeHandler(event cloudevents.Event) {
 		// noop for now.
 
 	case FinishedType:
+		c.store.Update(key, func(value interface{}, found bool) interface{} {
+			results := asResults(value, found)
+			results.Finished = event.Time().UTC().Format(time.RFC3339)
+			return results
+		})
+
 	case ExceptionType:
+		// TODO
+
 	default:
 		log.Println("unknown event type:", event.Type())
 	}

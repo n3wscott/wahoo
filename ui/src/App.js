@@ -19,7 +19,7 @@ export class App extends Component {
       wsURL = "wss://" + document.location.host + "/ws";
     }
 
-    wsURL = "ws://sockeye.default.d2k.n3wscott.com/ws"
+    wsURL = "ws://wahoo.default.d2k.n3wscott.com/ws"
     console.log("WS URL: " + wsURL);
  
     let that = this;
@@ -28,11 +28,11 @@ export class App extends Component {
     sock.onopen = function () {
       console.log("connected to " + wsURL);
       //let fab = document.getElementById("fab");
-      //fab.setAttribute("sockeye-connected", "true");
+      //fab.setAttribute("wahoo-connected", "true");
     };
     sock.onclose = function (e) {
       console.log("connection closed (" + e.code + ")");
-      //fab.setAttribute("sockeye-connected", "false");
+      //fab.setAttribute("wahoo-connected", "false");
     };
     sock.onmessage = function (e) {
       window.dispatchEvent(new Event('cloudevent'));

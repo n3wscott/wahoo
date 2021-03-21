@@ -1,4 +1,4 @@
-module github.com/n3wscott/sockeye
+module github.com/n3wscott/wahoo
 
 go 1.15
 

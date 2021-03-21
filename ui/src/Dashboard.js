@@ -29,7 +29,7 @@ import { func } from 'prop-types';
 function Source() {
   return (
     <Typography variant="body2" color="textSecondary" align="center">
-      <Link color="inherit" href="https://github.com/n3wscott/sockeye-react">
+      <Link color="inherit" href="https://github.com/n3wscott/wahoo">
         <GitHubIcon/>
       </Link>
     </Typography>
@@ -95,7 +95,7 @@ const useStyles = makeStyles((theme) => ({
   fixedHeight: {
     height: 240,
   },
-  sockeyeLogo: {
+  wahooLogo: {
     height: 60,
     paddingRight: 80,
   },
