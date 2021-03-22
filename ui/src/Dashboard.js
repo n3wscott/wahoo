@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react'
 import clsx from 'clsx';
-import { makeStyles } from '@material-ui/core/styles';
+import { makeStyles, withTheme } from '@material-ui/core/styles';
 import CssBaseline from '@material-ui/core/CssBaseline';
 import Drawer from '@material-ui/core/Drawer';
 import Box from '@material-ui/core/Box';
@@ -24,6 +24,12 @@ import AddIcon from '@material-ui/icons/Add';
 import LockIcon from '@material-ui/icons/Lock';
 import LockOpenIcon from '@material-ui/icons/LockOpen';
 import Table from './Table';
+import Demo from './Demo';
+import InputLabel from '@material-ui/core/InputLabel';
+import MenuItem from '@material-ui/core/MenuItem';
+import FormHelperText from '@material-ui/core/FormHelperText';
+import FormControl from '@material-ui/core/FormControl';
+import Select from '@material-ui/core/Select';
 import { func } from 'prop-types';
 
 function Source() {
@@ -51,6 +57,9 @@ const useStyles = makeStyles((theme) => ({
     justifyContent: 'flex-end',
     padding: '0 8px',
     ...theme.mixins.toolbar,
+  },
+  headerInput: {
+    color: "#fff",
   },
   appBar: {
     zIndex: theme.zIndex.drawer + 1,
@@ -104,12 +113,21 @@ const useStyles = makeStyles((theme) => ({
     bottom: theme.spacing(2),
     right: theme.spacing(2),
   },
+  formControl: {
+    margin: theme.spacing(1),
+    minWidth: 120,
+    text: '#fff',
+  },
 }));
 
 export default function Dashboard(props) {
-  const items = props.items;
-
   const classes = useStyles();
+  const [runId, setRunId] = React.useState('');
+
+  const handleChange = (event) => {
+    setRunId(event.target.value);
+  };
+  let items = ["61463fb6-3cf0-4767-b095-2ed2b47ed0c7"];
 
   return (
     <div className={classes.root}>
@@ -119,9 +137,24 @@ export default function Dashboard(props) {
           <Typography component="h1" variant="h6" color="inherit" noWrap className={classes.title}>
             Rekt Conformance
           </Typography>
-          <IconButton color="inherit">
-            <ClearAllIcon />
-          </IconButton>
+          <FormControl variant="outlined" className={classes.formControl}>
+            <InputLabel id="demo-simple-select-outlined-label" className={classes.headerInput}>Runs</InputLabel>
+            <Select
+              labelId="demo-simple-select-outlined-label"
+              id="demo-simple-select-outlined"
+              value={runId}
+              onChange={handleChange}
+              label="Runs"
+              className={classes.headerInput}
+            >
+              <MenuItem value="">
+                <em>None</em>
+              </MenuItem>
+              {items.map((item) => ( 
+                <MenuItem value={item}>{item}</MenuItem>
+              ))}
+            </Select>
+          </FormControl>
           <IconButton color="inherit">
             <Badge badgeContent={items.length} color="secondary">
               <NotificationsIcon />
@@ -133,7 +166,7 @@ export default function Dashboard(props) {
         <div className={classes.appBarSpacer} />
         <Container maxWidth="lg" className={classes.container}>
           <Paper>
-            <Table items={items}/>
+            <Demo runId={runId}/>
           </Paper>
           <Box pt={4}>
             <Source />

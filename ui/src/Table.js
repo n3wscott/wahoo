@@ -86,13 +86,13 @@ function Data(props) {
 export default function BasicTable(props) {
   const classes = useStyles();
   const rows = props.items;
-
+  
   return (
     <>
     
-  <Demo />
+    <Demo runId="61463fb6-3cf0-4767-b095-2ed2b47ed0c7" />
     
-    <TableContainer component={Paper}>
+    {/* <TableContainer component={Paper}>
       <Table className={classes.table}>
         <TableHead>
           <TableRow>
@@ -118,7 +118,7 @@ export default function BasicTable(props) {
 
         </TableBody>
       </Table>
-    </TableContainer>
+    </TableContainer> */}
     </>
   );
 }

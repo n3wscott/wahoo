@@ -1,43 +1,36 @@
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {makeStyles} from '@material-ui/core/styles';
 import './Json.css';
-import Slide from '@material-ui/core/Slide';
 import Collapse from '@material-ui/core/Collapse';
-import CircularProgressWithLabel from './CircularProgressWithLabel';
-
-
-import Accordion from '@material-ui/core/Accordion';
-import AccordionSummary from '@material-ui/core/AccordionSummary';
-import AccordionDetails from '@material-ui/core/AccordionDetails';
 import Typography from '@material-ui/core/Typography';
-import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
-
-import ListSubheader from '@material-ui/core/ListSubheader';
 import InboxIcon from '@material-ui/icons/MoveToInbox';
-import DraftsIcon from '@material-ui/icons/Drafts';
-import SendIcon from '@material-ui/icons/Send';
-import ExpandLess from '@material-ui/icons/ExpandLess';
-import ExpandMore from '@material-ui/icons/ExpandMore';
-import StarBorder from '@material-ui/icons/StarBorder';
+import Container from '@material-ui/core/Container';
 import ListItemIcon from '@material-ui/core/ListItemIcon';
-
+import CssBaseline from '@material-ui/core/CssBaseline';
 import List from '@material-ui/core/List';
 import ListItem from '@material-ui/core/ListItem';
 import ListItemText from '@material-ui/core/ListItemText';
 import ListItemAvatar from '@material-ui/core/ListItemAvatar';
 import Avatar from '@material-ui/core/Avatar';
+import Paper from '@material-ui/core/Paper';
+import Grid from '@material-ui/core/Grid';
+import CircularProgress from '@material-ui/core/CircularProgress';
+
+import ExpandLess from '@material-ui/icons/ExpandLess';
+import ExpandMore from '@material-ui/icons/ExpandMore';
+import StarBorder from '@material-ui/icons/StarBorder';
+import PlaylistAddCheck from '@material-ui/icons/PlaylistAddCheck';
+import CheckCircle from '@material-ui/icons/CheckCircle';
+import OfflineBolt from '@material-ui/icons/OfflineBolt';
+import RemoveCircle from '@material-ui/icons/RemoveCircle';
 import ImageIcon from '@material-ui/icons/Image';
 import WorkIcon from '@material-ui/icons/Work';
 import BeachAccessIcon from '@material-ui/icons/BeachAccess';
-import Box from '@material-ui/core/Box';
-import Paper from '@material-ui/core/Paper';
-import Grid from '@material-ui/core/Grid';
+import CachedIcon from '@material-ui/icons/Cached';
 
 import './App.css';
+import { green, yellow, red } from '@material-ui/core/colors';
 
-import XMLViewer from 'react-xml-viewer'
-
-import Attributes from './Attributes';
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -55,75 +48,25 @@ const useStyles = makeStyles((theme) => ({
   nested2: {
     paddingLeft: theme.spacing(8),
   },
+  green: {
+    color: '#fff',
+    backgroundColor: green[500],
+  },
+  yellow: {
+    color: '#fff',
+    backgroundColor: yellow[500],
+  },
+  red: {
+    color: '#fff',
+    backgroundColor: red[500],
+  },
 }));
 
 
-const data = {
-  run: "knative.dev/reconciler-test/61463fb6-3cf0-4767-b095-2ed2b47ed0c7",
-  environment: {
-    featureState:"Any",
-    namespace:"test-iwpuyldo",
-    requirementLevel:"All"
-  },
-  tests :[{
-    name: "TestBrokerConformance",
-    progress: "60/99",
-    features: [{
-      name: "Broker",
-      progress: "60/99",
-      steps:[{
-        level: "MUST",
-        name: "Do a thing that is a must.",
-      }],
-    },{
-      name: "Trigger, Given Broker",
-      progress: "6/10",
-      steps:[{
-        level: "SHOULD",
-        name: "Conformance Triggers SHOULD include a Ready condition in their status.",
-      },{
-        level: "MAY",
-        name: "To this other thing.",
-      }],
-    }],
-  }],
-};
-
-
-
-function Step(props) {
-  const classes = useStyles();
-  
-  return (
-    <>
-    <Grid item xs={12}>
-      <Paper className={classes.paper}>
-        <Typography>[{props.level}] {props.name}</Typography>
-      </Paper>
-    </Grid>
-    
-    </>
-  );
-}
-
-function Feature(props) {
-  const classes = useStyles();
-  
-  return (
-    <>
-    <Typography>{props.name}</Typography>
-    <Grid container spacing={3}>
-      {props.steps.map((s) => (  
-          <Step name={s.name} level={s.level} />
-      ))}
-    </Grid>
-    </>
-  );
-}
-
 function NestedListItem(props) {
   const classes = useStyles();
-  const [open, setOpen] = React.useState(true);
+  const [open, setOpen] = React.useState(false);
+  const [isLoaded, setIsLoaded] = useState(false);
 
   const handleClick = () => {
     setOpen(!open);
@@ -133,7 +76,7 @@ function NestedListItem(props) {
     <>
       <ListItem button onClick={handleClick} className={props.className}>
         <ListItemIcon>
-          <InboxIcon />
+          <Icon thing={props.icon} kind={props.kind} />
         </ListItemIcon>
         <ListItemText primary={props.primary} />
         {open ? <ExpandLess /> : <ExpandMore />}
@@ -145,8 +88,170 @@ function NestedListItem(props) {
   );
 }
 
+function Icon(props) {
+  const classes = useStyles();
+  const thing = props.thing;
+
+
+  if (thing.passed) {
+    let TheIcon = CheckCircle;
+    if (props.kind === "Test") {
+      TheIcon = PlaylistAddCheck;
+    }
+    return (
+      <Avatar className={classes.green}>
+        <TheIcon />
+      </Avatar>
+    )
+  }
+
+  if (thing.skipped) {
+    let TheIcon = RemoveCircle;
+    return (
+      <Avatar className={classes.yellow}>
+        <TheIcon />
+      </Avatar>
+    )
+  }
+
+  if (thing.failed) {
+    let TheIcon = OfflineBolt;
+    return (
+      <Avatar className={classes.red}>
+        <TheIcon />
+      </Avatar>
+    )
+  }
+  return (
+    <Avatar>
+      <CachedIcon />
+    </Avatar>
+  );
+}
+
+function Tests({ tests }) {
+  const classes = useStyles();
+
+  if (!tests ) {
+    return null
+  }
+  return (
+    <>
+    {tests.map((test) => ( 
+      <NestedListItem primary={test.name} icon={test} kind="Test">
+        <List component="div" disablePadding>
+        <Steps steps={test.steps} />
+        </List>
+     </NestedListItem>
+    ))}
+    </>    
+  );
+}
+
+
+function Steps({ steps }) {
+  const classes = useStyles();
+
+  if (!steps ) {
+    return null
+  }
+  return (
+    <>
+    {steps.map((step) => (
+      <ListItem button primary={step.name} className={classes.nested1}>
+        <ListItemIcon>
+          <Icon thing={step} />
+        </ListItemIcon>
+        <ListItemText primary={step.name} />
+      </ListItem>
+    ))}
+    </>    
+  );
+}
+
+export const useInterval = (callback, delay) => {
+
+  const savedCallback = useRef();
+
+  useEffect(() => {
+    savedCallback.current = callback;
+  }, [callback]);
+
+
+  useEffect(() => {
+    function tick() {
+      savedCallback.current();
+    }
+    if (delay !== null) {
+      const id = setInterval(tick, delay);
+      return () => clearInterval(id);
+    }
+  }, [delay]);
+}
+
 export default function BasicTable(props) {
   const classes = useStyles();
+  const [error, setError] = useState(null);
+  const [isLoaded, setIsLoaded] = useState(false);
+  const [data, setData] = useState({tests :[]});
+
+  const runId = props.runId;
+
+  const loadNow = () => {
+    if (runId === "") {
+      setData({tests :[]})
+      return
+    }  
+    console.log("/run/"+runId)
+    fetch("/run/"+runId)
+        .then(res => res.json())
+        .then(
+            (result) => {
+                setData(result);
+                setIsLoaded(true);
+            },
+            (error) => {
+                setError(error);
+            }
+        )
+  };
+
+  useEffect(loadNow, [])
+
+  useInterval(() => {
+    loadNow()
+  }, 250);
+
+  if (error) {
+    return (
+        <React.Fragment>
+            <CssBaseline/>
+            {/* Hero unit */}
+            <Container maxWidth="sm" component="main" className={classes.heroContent}>
+                <Typography variant="h5" align="center" color="textSecondary" component="p">
+                    Error: {error.message}
+                </Typography>
+            </Container>
+        </React.Fragment>
+    )
+  }
+  if (!isLoaded) {
+    return (
+        <React.Fragment>
+            <CssBaseline/>
+            {/* Hero unit */}
+            <Container maxWidth="sm" component="main" className={classes.heroContent}>
+                <Typography variant="h5" align="center" color="textSecondary" component="p">
+                    loading...
+                </Typography>
+            </Container>
+        </React.Fragment>
+    )
+  }
+
+  if (!data || !data.environment) {
+    return null
+  }
 
   return (
     <>
@@ -175,26 +280,7 @@ export default function BasicTable(props) {
         </ListItemAvatar>
         <ListItemText primary="Namespace" secondary={ data.environment.namespace } />
       </ListItem>
-      {data.tests.map((row) => ( 
-        <NestedListItem primary={row.name}>
-          <List component="div" disablePadding>
-          {row.features.map((f) => (
-            <NestedListItem primary={f.name} className={classes.nested1}>
-              <List component="div" disablePadding>
-              {f.steps.map((s) => (
-                <ListItem button className={classes.nested2}>
-                  <ListItemIcon>
-                    <StarBorder />
-                  </ListItemIcon>
-                  <ListItemText primary={s.name} />
-                </ListItem>
-              ))}
-              </List>
-            </NestedListItem>
-            ))}
-          </List>
-       </NestedListItem>
-      ))}     
+      <Tests tests={ data.tests } />
     </List>
 
     </>

@@ -20,7 +20,7 @@ type Environment struct {
 
 type Test struct {
 	Name  string `json:"name"`
-	Steps []Step `json:"step"`
+	Steps []Step `json:"steps"`
 
 	Passed  bool `json:"passed"`
 	Skipped bool `json:"skipped"`
