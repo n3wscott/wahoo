@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef } from 'react';
 import { makeStyles } from '@material-ui/core/styles';
 import CssBaseline from '@material-ui/core/CssBaseline';
 import Box from '@material-ui/core/Box';
@@ -108,14 +108,10 @@ const useStyles = makeStyles((theme) => ({
 
 
 export const useInterval = (callback, delay) => {
-
   const savedCallback = useRef();
-
   useEffect(() => {
     savedCallback.current = callback;
   }, [callback]);
-
-
   useEffect(() => {
     function tick() {
       savedCallback.current();
@@ -130,11 +126,34 @@ export const useInterval = (callback, delay) => {
 export default function Dashboard(props) {
   const classes = useStyles();
   const [runId, setRunId] = React.useState('');
+  const [error, setError] = useState(null);
+  const [runs, setRuns] = useState([]);
+
+  const loadNow = () => {
+    console.log("/runs")
+    fetch("/runs")
+        .then(res => res.json())
+        .then(
+            (result) => {
+                setRuns(result);
+            },
+            (error) => {
+                setError(error);
+            }
+        )
+  };
+
+  useEffect(loadNow, [])
+
+  useInterval(() => {
+    loadNow()
+  }, 2000);
 
   const handleChange = (event) => {
     setRunId(event.target.value);
   };
-  let items = ["61463fb6-3cf0-4767-b095-2ed2b47ed0c7"];
+
+  // TODO: use error.
 
   return (
     <div className={classes.root}>
@@ -157,13 +176,13 @@ export default function Dashboard(props) {
               <MenuItem value="">
                 <em>None</em>
               </MenuItem>
-              {items.map((item) => ( 
-                <MenuItem value={item}>{item}</MenuItem>
+              {runs.map((run) => ( 
+                <MenuItem value={run}>{run}</MenuItem>
               ))}
             </Select>
           </FormControl>
           <IconButton color="inherit">
-            <Badge badgeContent={items.length} color="secondary">
+            <Badge badgeContent={runs.length} color="secondary">
               <NotificationsIcon />
             </Badge>
           </IconButton>

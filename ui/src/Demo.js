@@ -57,9 +57,7 @@ const useStyles = makeStyles((theme) => ({
 
 
 function NestedListItem(props) {
-  const classes = useStyles();
   const [open, setOpen] = React.useState(false);
-  const [isLoaded, setIsLoaded] = useState(false);
 
   const handleClick = () => {
     setOpen(!open);
