@@ -15,9 +15,7 @@ func (c *Controller) RunsHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (c *Controller) RunHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("===>", r.URL)
 	_, id := filepath.Split(r.URL.Path)
-	fmt.Println(">>>> ", id)
 	out := json.NewEncoder(w)
 
 	if err := out.Encode(c.store.Get(id)); err != nil {
