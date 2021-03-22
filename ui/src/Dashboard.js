@@ -135,7 +135,7 @@ export default function Dashboard(props) {
       <AppBar position="absolute" className={classes.appBar}>
         <Toolbar className={classes.toolbar}>
           <Typography component="h1" variant="h6" color="inherit" noWrap className={classes.title}>
-            Rekt Conformance
+            Wahoo! Rekt Results Viewer
           </Typography>
           <FormControl variant="outlined" className={classes.formControl}>
             <InputLabel id="demo-simple-select-outlined-label" className={classes.headerInput}>Runs</InputLabel>
