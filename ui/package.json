@@ -19,6 +19,7 @@
     "react-flame-graph": "^1.4.0",
     "react-json-pretty": "^2.2.0",
     "react-json-view": "^1.19.1",
+    "react-router-dom": "^5.2.0",
     "react-scripts": "4.0.0",
     "react-tiny-fab": "^4.0.2",
     "react-transition-group": "^4.4.1",
@@ -27,7 +28,7 @@
     "styled-components": "^5.2.1",
     "web-vitals": "^0.2.4"
   },
-  "proxy": "http://localhost:8080",
+  "proxy": "https://getrekt.dev",
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",

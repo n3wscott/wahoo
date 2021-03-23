@@ -13,10 +13,12 @@ import Paper from '@material-ui/core/Paper';
 import Link from '@material-ui/core/Link';
 import NotificationsIcon from '@material-ui/icons/Notifications';
 import Demo from './Demo';
+import Blank from './Blank';
 import InputLabel from '@material-ui/core/InputLabel';
 import MenuItem from '@material-ui/core/MenuItem';
 import FormControl from '@material-ui/core/FormControl';
 import Select from '@material-ui/core/Select';
+import { HashRouter, Route, Switch, useHistory } from 'react-router-dom';
 
 function Source() {
   return (
@@ -123,6 +125,48 @@ export const useInterval = (callback, delay) => {
   }, [delay]);
 }
 
+
+function RunsDropdown(props) {
+  const classes = useStyles();
+  let history = useHistory();
+
+  const runs = props.runs;
+  const runId = props.runId;
+
+  function handleClick(event) {
+    if (event.target.value === "") {
+      history.push("/");
+    }
+    else {
+      history.push("/run/"+event.target.value);
+    }
+    if (props.onChange) {
+      props.onChange(event);
+    }
+  }
+
+  return (
+    <FormControl variant="outlined" className={classes.formControl}>
+      <InputLabel id="demo-simple-select-outlined-label" className={classes.headerInput}>Runs</InputLabel>
+      <Select
+        labelId="demo-simple-select-outlined-label"
+        id="demo-simple-select-outlined"
+        value={runId}
+        onChange={handleClick}
+        label="Runs"
+        className={classes.headerInput}
+      >
+        <MenuItem value="">
+          <em>None</em>
+        </MenuItem>
+        {runs.map((run) => ( 
+          <MenuItem value={run}>{run}</MenuItem>
+        ))}
+      </Select>
+    </FormControl>
+  );
+}
+
 export default function Dashboard(props) {
   const classes = useStyles();
   const [runId, setRunId] = React.useState('');
@@ -156,6 +200,7 @@ export default function Dashboard(props) {
   // TODO: use error.
 
   return (
+    <HashRouter basename="/" hashType="slash">
     <div className={classes.root}>
       <CssBaseline />
       <AppBar position="absolute" className={classes.appBar}>
@@ -163,24 +208,7 @@ export default function Dashboard(props) {
           <Typography component="h1" variant="h6" color="inherit" noWrap className={classes.title}>
             Wahoo! Rekt Results Viewer
           </Typography>
-          <FormControl variant="outlined" className={classes.formControl}>
-            <InputLabel id="demo-simple-select-outlined-label" className={classes.headerInput}>Runs</InputLabel>
-            <Select
-              labelId="demo-simple-select-outlined-label"
-              id="demo-simple-select-outlined"
-              value={runId}
-              onChange={handleChange}
-              label="Runs"
-              className={classes.headerInput}
-            >
-              <MenuItem value="">
-                <em>None</em>
-              </MenuItem>
-              {runs.map((run) => ( 
-                <MenuItem value={run}>{run}</MenuItem>
-              ))}
-            </Select>
-          </FormControl>
+          <RunsDropdown runs={runs} runId={runId} onChange={handleChange} />
           <IconButton color="inherit">
             <Badge badgeContent={runs.length} color="secondary">
               <NotificationsIcon />
@@ -192,7 +220,12 @@ export default function Dashboard(props) {
         <div className={classes.appBarSpacer} />
         <Container maxWidth="lg" className={classes.container}>
           <Paper>
-            <Demo runId={runId}/>
+            
+              <Switch>
+                <Route exact path={'/'} component={Blank}></Route>
+                <Route path={'/run/:runId'} component={Demo}></Route>
+              </Switch>
+            
           </Paper>
           <Box pt={4}>
             <Source />
@@ -200,5 +233,6 @@ export default function Dashboard(props) {
         </Container>
       </main>
     </div>
+    </HashRouter>
   );
 }

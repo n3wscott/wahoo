@@ -10,7 +10,7 @@ import ListItem from '@material-ui/core/ListItem';
 import ListItemText from '@material-ui/core/ListItemText';
 import ListItemAvatar from '@material-ui/core/ListItemAvatar';
 import Avatar from '@material-ui/core/Avatar';
-
+import { useParams } from "react-router-dom";
 import ExpandLess from '@material-ui/icons/ExpandLess';
 import ExpandMore from '@material-ui/icons/ExpandMore';
 import PlaylistAddCheck from '@material-ui/icons/PlaylistAddCheck';
@@ -23,7 +23,6 @@ import BeachAccessIcon from '@material-ui/icons/BeachAccess';
 import CachedIcon from '@material-ui/icons/Cached';
 
 import { green, yellow, red } from '@material-ui/core/colors';
-
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -186,7 +185,7 @@ export default function BasicTable(props) {
   const [isLoaded, setIsLoaded] = useState(false);
   const [data, setData] = useState({tests :[]});
 
-  const runId = props.runId;
+  const { runId } = useParams();
 
   const loadNow = () => {
     if (runId === "") {

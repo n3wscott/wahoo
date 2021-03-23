@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"log"
 	"sync"
 	"time"
 )
@@ -46,6 +47,7 @@ func (s *Store) gc() {
 	now := time.Now().Unix()
 	for k, v := range s.records {
 		if now-v.last > s.max {
+			log.Println("deleting record", k)
 			delete(s.records, k)
 		}
 	}
