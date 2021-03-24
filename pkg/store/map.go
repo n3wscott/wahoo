@@ -13,7 +13,7 @@ type record struct {
 }
 
 type Store struct {
-	records map[string]*record
+	records map[interface{}]*record
 	mux     sync.Mutex
 	max     int64
 }
@@ -25,7 +25,7 @@ type Store struct {
 // GC period is 5 seconds.
 func New(ctx context.Context, size int, ttl time.Duration) *Store {
 	s := &Store{
-		records: make(map[string]*record, size),
+		records: make(map[interface{}]*record, size),
 		max:     int64(ttl.Seconds()),
 	}
 	ticker := time.NewTicker(5 * time.Second)
@@ -53,15 +53,15 @@ func (s *Store) gc() {
 	}
 }
 
-func (s *Store) Keys() []string {
-	keys := make([]string, 0)
+func (s *Store) Keys() []interface{} {
+	keys := make([]interface{}, 0)
 	for k := range s.records {
 		keys = append(keys, k)
 	}
 	return keys
 }
 
-func (s *Store) Set(k string, v interface{}) {
+func (s *Store) Set(k interface{}, v interface{}) {
 	s.mux.Lock()
 	defer s.mux.Unlock()
 
@@ -76,7 +76,7 @@ func (s *Store) Set(k string, v interface{}) {
 	r.last = time.Now().Unix()
 }
 
-func (s *Store) Get(k string) interface{} {
+func (s *Store) Get(k interface{}) interface{} {
 	s.mux.Lock()
 	defer s.mux.Unlock()
 
@@ -88,7 +88,14 @@ func (s *Store) Get(k string) interface{} {
 	return nil
 }
 
-func (s *Store) Update(k string, fn func(value interface{}, found bool) interface{}) {
+func (s *Store) Delete(k interface{}) {
+	s.mux.Lock()
+	defer s.mux.Unlock()
+
+	delete(s.records, k)
+}
+
+func (s *Store) Update(k interface{}, fn func(value interface{}, found bool) interface{}) {
 	s.mux.Lock()
 	defer s.mux.Unlock()
 

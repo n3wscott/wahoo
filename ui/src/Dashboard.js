@@ -19,6 +19,7 @@ import MenuItem from '@material-ui/core/MenuItem';
 import FormControl from '@material-ui/core/FormControl';
 import Select from '@material-ui/core/Select';
 import { HashRouter, Route, Switch, useHistory } from 'react-router-dom';
+import TimeAgo from 'react-timeago'
 
 function Source() {
   return (
@@ -96,6 +97,9 @@ const useStyles = makeStyles((theme) => ({
     height: 60,
     paddingRight: 80,
   },
+  dropdown: {
+    paddingRight: 10,
+  },
   fab: {
     position: 'absolute',
     bottom: theme.spacing(2),
@@ -160,7 +164,14 @@ function RunsDropdown(props) {
           <em>None</em>
         </MenuItem>
         {runs.map((run) => ( 
-          <MenuItem value={run}>{run}</MenuItem>
+          <MenuItem value={run.id}>
+            <Typography variant="body1" className={classes.dropdown}>
+              {run.id}
+            </Typography>
+            <Typography variant="body2" color="textSecondary">
+              <TimeAgo date={run.added}/>
+            </Typography>
+          </MenuItem>
         ))}
       </Select>
     </FormControl>
@@ -179,6 +190,11 @@ export default function Dashboard(props) {
         .then(res => res.json())
         .then(
             (result) => {
+                result.sort(function(a, b) {
+                  let ta = new Date(a.added);
+                  let tb = new Date(b.added);
+                  return ta.getTime() - tb.getTime();
+                });
                 setRuns(result);
             },
             (error) => {

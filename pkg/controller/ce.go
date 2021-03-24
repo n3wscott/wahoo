@@ -1,12 +1,13 @@
 package controller
 
 import (
-	cloudevents "github.com/cloudevents/sdk-go/v2"
-	"github.com/n3wscott/wahoo/pkg/model"
 	"log"
 	"path/filepath"
 	"strings"
 	"time"
+
+	cloudevents "github.com/cloudevents/sdk-go/v2"
+	"github.com/n3wscott/wahoo/pkg/model"
 )
 
 const (
@@ -23,9 +24,43 @@ const (
 	ExceptionType        = "dev.knative.rekt.exception.v1"
 )
 
-func keyFromSource(source string) string {
-	_, id := filepath.Split(source)
-	return id
+type KeyData struct {
+	ID    string `json:"id"`
+	Added string `json:"added"`
+}
+
+func (c *Controller) keyFromEvent(event cloudevents.Event) KeyData {
+	_, id := filepath.Split(event.Source())
+
+	key := KeyData{
+		ID:    id,
+		Added: event.Time().UTC().Format(time.RFC3339),
+	}
+
+	found := false
+	for _, sk := range c.store.Keys() {
+		k := sk.(KeyData)
+		if k.ID == id {
+			found = true
+			key = k
+			break
+		}
+	}
+
+	// Special case the start of the env.
+	if found && event.Type() == EnvironmentType {
+		newKey := KeyData{
+			ID:    id,
+			Added: event.Time().UTC().Format(time.RFC3339),
+		}
+		if v := c.store.Get(key); v != nil {
+			c.store.Delete(key)
+			c.store.Set(newKey, v)
+		}
+		return newKey
+	}
+
+	return key
 }
 
 func testNameFromStepName(stepName string) string {
@@ -38,13 +73,13 @@ func testNameFromStepName(stepName string) string {
 
 func (c *Controller) CeHandler(event cloudevents.Event) {
 
-	key := keyFromSource(event.Source())
+	key := c.keyFromEvent(event)
 
 	asResults := func(value interface{}, found bool) *model.Results {
 		results, ok := value.(*model.Results)
 		if !ok || !found {
 			results = new(model.Results)
-			results.Run = key
+			results.Run = key.ID
 		}
 		return results
 	}
