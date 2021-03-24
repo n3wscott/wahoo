@@ -18,7 +18,20 @@ func (c *Controller) RunHandler(w http.ResponseWriter, r *http.Request) {
 	_, id := filepath.Split(r.URL.Path)
 	out := json.NewEncoder(w)
 
-	if err := out.Encode(c.store.Get(id)); err != nil {
-		fmt.Println(err)
+	var key *KeyData
+	for _, sk := range c.store.Keys() {
+		k := sk.(KeyData)
+		if k.ID == id {
+			key = &k
+			break
+		}
+	}
+
+	if key != nil {
+		if err := out.Encode(c.store.Get(*key)); err != nil {
+			fmt.Println(err)
+		}
+	} else {
+		w.WriteHeader(http.StatusNotFound)
 	}
 }
