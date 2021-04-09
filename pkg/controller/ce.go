@@ -66,7 +66,8 @@ func (c *Controller) keyFromEvent(event cloudevents.Event) KeyData {
 func testNameFromStepName(stepName string) string {
 	parts := strings.Split(stepName, "/")
 	if len(parts) > 2 {
-		return strings.Join(parts[:2], "/")
+		return parts[0]
+		//return strings.Join(parts[:2], "/")
 	}
 	return stepName
 }
@@ -128,8 +129,14 @@ func (c *Controller) CeHandler(event cloudevents.Event) {
 			log.Println("failed to parse data from event: ☁️ ", event.String())
 			return
 		}
+
+		testName := started.Feature
+		if len(testName) == 0 {
+			_ = event.ExtensionAs("testparent", &testName)
+		}
+
 		test := model.Test{
-			Name:    started.TestName,
+			Name:    testName,
 			Started: event.Time().UTC().Format(time.RFC3339),
 		}
 		c.store.Update(key, func(value interface{}, found bool) interface{} {
@@ -154,8 +161,13 @@ func (c *Controller) CeHandler(event cloudevents.Event) {
 			log.Println("failed to parse data from event: ☁️ ", event.String())
 			return
 		}
+		testName := finished.Feature
+		if len(testName) == 0 {
+			_ = event.ExtensionAs("testparent", &testName)
+		}
+
 		test := model.Test{
-			Name:    finished.TestName,
+			Name:    testName,
 			Passed:  finished.Passed,
 			Skipped: finished.Skipped,
 			Failed:  finished.Failed,
@@ -192,7 +204,12 @@ func (c *Controller) CeHandler(event cloudevents.Event) {
 			Timing:  started.StepTiming,
 			Started: event.Time().UTC().Format(time.RFC3339),
 		}
-		testName := testNameFromStepName(started.TestName)
+
+		testName := started.Feature
+		if len(testName) == 0 {
+			_ = event.ExtensionAs("testparent", &testName)
+		}
+
 		c.store.Update(key, func(value interface{}, found bool) interface{} {
 			results := asResults(value, found)
 			testExists := false
@@ -239,7 +256,12 @@ func (c *Controller) CeHandler(event cloudevents.Event) {
 			Failed:  started.Failed,
 			Ended:   event.Time().UTC().Format(time.RFC3339),
 		}
-		testName := testNameFromStepName(started.TestName)
+		//testName := testNameFromStepName(started.TestName)
+		testName := started.Feature
+		if len(testName) == 0 {
+			_ = event.ExtensionAs("testparent", &testName)
+		}
+
 		c.store.Update(key, func(value interface{}, found bool) interface{} {
 			results := asResults(value, found)
 			testExists := false
@@ -300,6 +322,7 @@ func (c *Controller) CeHandler(event cloudevents.Event) {
 
 type TestType struct {
 	TestName string `json:"testName"`
+	Feature  string `json:"feature"`
 	Passed   bool   `json:"passed"`
 	Skipped  bool   `json:"skipped"`
 	Failed   bool   `json:"failed"`
@@ -307,6 +330,7 @@ type TestType struct {
 
 type StepType struct {
 	TestName   string `json:"testName"`
+	Feature    string `json:"feature"`
 	StepName   string `json:"stepName"`
 	StepLevel  string `json:"stepLevel"`
 	StepTiming string `json:"stepTiming"`

@@ -19,7 +19,8 @@ type Environment struct {
 }
 
 type Test struct {
-	Name  string `json:"name"`
+	Name string `json:"name"`
+	//Feature string `json:"feature"`
 	Steps []Step `json:"steps"`
 
 	Passed  bool `json:"passed"`
@@ -31,7 +32,8 @@ type Test struct {
 }
 
 type Step struct {
-	Name   string `json:"name"`
+	Name string `json:"name"`
+	//Feature string `json:"feature"`
 	Level  string `json:"level"`
 	Timing string `json:"timing"`
 
