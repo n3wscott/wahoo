@@ -20,7 +20,7 @@ type Controller struct {
 func New(root string) *Controller {
 	return &Controller{
 		root:  root,
-		store: store.New(context.Background(), 10, time.Minute*60),
+		store: store.New(context.Background(), 10, time.Minute*60*6),
 	}
 }
 

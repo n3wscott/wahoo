@@ -2,7 +2,6 @@ package store
 
 import (
 	"context"
-	"log"
 	"sync"
 	"time"
 )
@@ -16,6 +15,7 @@ type Store struct {
 	records map[interface{}]*record
 	mux     sync.Mutex
 	max     int64
+	limit   int
 }
 
 // New creates a store for time to live records.
@@ -23,19 +23,23 @@ type Store struct {
 // `size` is the initial size of the store.
 // `ttl` is time to live.
 // GC period is 5 seconds.
+// Default record limit is 50.
 func New(ctx context.Context, size int, ttl time.Duration) *Store {
 	s := &Store{
 		records: make(map[interface{}]*record, size),
 		max:     int64(ttl.Seconds()),
+		limit:   50,
 	}
 	ticker := time.NewTicker(5 * time.Second)
 
 	go func() {
-		select {
-		case <-ctx.Done():
-			return
-		case <-ticker.C:
-			s.gc()
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-ticker.C:
+				s.gc()
+			}
 		}
 	}()
 	return s
@@ -45,10 +49,24 @@ func (s *Store) gc() {
 	s.mux.Lock()
 	defer s.mux.Unlock()
 	now := time.Now().Unix()
+
+	var oldest interface{}
+	oldestAge := int64(0)
+	defer func() {
+		if len(s.records) > s.limit {
+			// log.Println("[limit] deleting record", oldest)
+			delete(s.records, oldest)
+		}
+	}()
+
 	for k, v := range s.records {
-		if now-v.last > s.max {
-			log.Println("deleting record", k)
+		age := now - v.last
+		if age > s.max {
+			// log.Println("[ttl] deleting record", k)
 			delete(s.records, k)
+		} else if age > oldestAge {
+			oldestAge = age
+			oldest = k
 		}
 	}
 }
