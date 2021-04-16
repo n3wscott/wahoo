@@ -14,6 +14,11 @@ import { useParams } from "react-router-dom";
 import ExpandLess from '@material-ui/icons/ExpandLess';
 import ExpandMore from '@material-ui/icons/ExpandMore';
 import PlaylistAddCheck from '@material-ui/icons/PlaylistAddCheck';
+import BuildIcon from '@material-ui/icons/Build';
+import SpeedIcon from '@material-ui/icons/Speed';
+import WhatshotIcon from '@material-ui/icons/Whatshot';
+import LayersIcon from '@material-ui/icons/Layers';
+import HelpOutlineIcon from '@material-ui/icons/HelpOutline';
 import CheckCircle from '@material-ui/icons/CheckCircle';
 import OfflineBolt from '@material-ui/icons/OfflineBolt';
 import RemoveCircle from '@material-ui/icons/RemoveCircle';
@@ -22,7 +27,7 @@ import WorkIcon from '@material-ui/icons/Work';
 import BeachAccessIcon from '@material-ui/icons/BeachAccess';
 import CachedIcon from '@material-ui/icons/Cached';
 
-import { green, yellow, red } from '@material-ui/core/colors';
+import { green, yellow, red, teal } from '@material-ui/core/colors';
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -51,6 +56,22 @@ const useStyles = makeStyles((theme) => ({
   red: {
     color: '#fff',
     backgroundColor: red[500],
+  },
+  running: {
+    color: '#fff',
+    backgroundColor: teal[200],
+    animation: `$pulse 2s infinite`
+  },
+  "@keyframes pulse": {
+    "0%": {
+        backgroundColor: teal[100]
+    },
+    "50%": {
+        backgroundColor: teal[600]
+    },
+    "100%": {
+      backgroundColor: teal[50]
+    }
   },
 }));
 
@@ -82,39 +103,38 @@ function Icon(props) {
   const classes = useStyles();
   const thing = props.thing;
 
+  let color = null;
+  let TheIcon = HelpOutlineIcon
 
   if (thing.passed) {
-    let TheIcon = CheckCircle;
     if (props.kind === "Test") {
       TheIcon = PlaylistAddCheck;
+    } else {
+        TheIcon = CheckCircle;
     }
-    return (
-      <Avatar className={classes.green}>
-        <TheIcon />
-      </Avatar>
-    )
+    color = classes.green;
+  } else if (thing.skipped) {
+    TheIcon = RemoveCircle;
+    color = classes.yellow;
+  } else if (thing.failed) {
+    TheIcon = OfflineBolt;
+    color = classes.red;
+  } else if (thing.started) {
+      TheIcon = CachedIcon
+      color = classes.running;
+  } else if (thing.timing === "Setup") {
+      TheIcon = BuildIcon
+  } else if (thing.timing === "Requirement") {
+      TheIcon = SpeedIcon
+  } else if (thing.timing === "Assert") {
+      TheIcon = LayersIcon
+  } else if (thing.timing === "Teardown") {
+      TheIcon = WhatshotIcon
   }
 
-  if (thing.skipped) {
-    let TheIcon = RemoveCircle;
-    return (
-      <Avatar className={classes.yellow}>
-        <TheIcon />
-      </Avatar>
-    )
-  }
-
-  if (thing.failed) {
-    let TheIcon = OfflineBolt;
-    return (
-      <Avatar className={classes.red}>
-        <TheIcon />
-      </Avatar>
-    )
-  }
   return (
-    <Avatar>
-      <CachedIcon />
+    <Avatar className={color}>
+      <TheIcon />
     </Avatar>
   );
 }

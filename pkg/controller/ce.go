@@ -16,6 +16,7 @@ const (
 	NamespaceDeletedType = "dev.knative.rekt.namespace.deleted.v1"
 	TestStartedType      = "dev.knative.rekt.test.started.v1"
 	TestFinishedType     = "dev.knative.rekt.test.finished.v1"
+	StepsPlannedType     = "dev.knative.rekt.steps.planned.v1"
 	StepStartedType      = "dev.knative.rekt.step.started.v1"
 	StepFinishedType     = "dev.knative.rekt.step.finished.v1"
 	TestSetStartedType   = "dev.knative.rekt.testset.started.v1"
@@ -191,6 +192,64 @@ func (c *Controller) CeHandler(event cloudevents.Event) {
 			}
 			return results
 		})
+	case StepsPlannedType:
+		var planned PlannedType
+		if err := event.DataAs(&planned); err != nil {
+			log.Println("failed to parse data from event: ☁️ ", event.String())
+			return
+		}
+
+		c.store.Update(key, func(value interface{}, found bool) interface{} {
+			results := asResults(value, found)
+			testExists := false
+
+			testName := planned.Feature
+			if len(testName) == 0 {
+				_ = event.ExtensionAs("testparent", &testName)
+			}
+
+			order := []string{"Setup", "Requirement", "Assert", "Teardown"}
+
+			for i, t := range results.Tests {
+				if t.Name == testName {
+					testExists = true
+
+					for _, timing := range order {
+						for _, stepName := range planned.Steps[timing] {
+							stepFound := false
+							for _, s := range results.Tests[i].Steps {
+								if s.Name == stepName {
+									stepFound = true
+									break
+								}
+							}
+							if !stepFound {
+								results.Tests[i].Steps = append(results.Tests[i].Steps, model.Step{
+									Name:   stepName,
+									Timing: timing,
+								})
+							}
+						}
+					}
+				}
+			}
+			if !testExists {
+				var steps []model.Step
+				for _, timing := range order {
+					for _, stepName := range planned.Steps[timing] {
+						steps = append(steps, model.Step{
+							Name:   stepName,
+							Timing: timing,
+						})
+					}
+				}
+				results.Tests = append(results.Tests, model.Test{
+					Name:  testName,
+					Steps: steps,
+				})
+			}
+			return results
+		})
 
 	case StepStartedType:
 		var started StepType
@@ -326,6 +385,12 @@ type TestType struct {
 	Passed   bool   `json:"passed"`
 	Skipped  bool   `json:"skipped"`
 	Failed   bool   `json:"failed"`
+}
+
+type PlannedType struct {
+	TestName string              `json:"testName"`
+	Feature  string              `json:"feature"`
+	Steps    map[string][]string `json:"steps"`
 }
 
 type StepType struct {
